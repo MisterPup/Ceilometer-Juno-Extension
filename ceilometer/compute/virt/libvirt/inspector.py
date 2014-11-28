@@ -242,3 +242,4 @@ class LibvirtInspector(virt_inspector.Inspector):
                        'can not get info from libvirt: %(error)s'),
                      {'instance_name': instance_name, 'error': e})
 
+
