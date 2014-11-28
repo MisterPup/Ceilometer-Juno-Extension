@@ -225,12 +225,12 @@ class LibvirtInspector(virt_inspector.Inspector):
 
         try:
             memory_stats = domain.memoryStats()
-            if(memory_stats and memory_stats.get('actual'))
+            if(memory_stats and memory_stats.get('actual')):
                 allocated_memory = memory_stats['actual']
                 # Stat provided from libvirt is in KB, converting it to MB.
                 allocated_memory = allocated_memory / units.Ki
                 return virt_inspector.AllocatedMemoryStats(allocated=allocated_memory)
-            else
+            else:
                 LOG.warn(_('Failed to inspect allocated_memory of '
                            '%(instance_name)s, can not get info from libvirt'),
                          {'instance_name': instance_name})
