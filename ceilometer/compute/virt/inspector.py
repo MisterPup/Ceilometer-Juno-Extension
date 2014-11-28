@@ -65,6 +65,11 @@ CPUUtilStats = collections.namedtuple('CPUUtilStats', ['util'])
 #
 MemoryUsageStats = collections.namedtuple('MemoryUsageStats', ['usage'])
 
+# Named tuple representing allocated memory.
+#
+# allocated: Allocated memory
+#
+AllocatedMemoryStats = collections.namedtuple('AllocatedMemoryStats', ['allocated'])
 
 # Named tuple representing vNICs.
 #

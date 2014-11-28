@@ -218,7 +218,7 @@ class LibvirtInspector(virt_inspector.Inspector):
         domain = self._lookup_by_name(instance_name)
         state = domain.info()[0]
         if state == libvirt.VIR_DOMAIN_SHUTOFF:
-            LOG.warn(_('Failed to inspect memory usage of %(instance_name)s, '
+            LOG.warn(_('Failed to inspect allocated memory of %(instance_name)s, '
                        'domain is in state of SHUTOFF'),
                      {'instance_name': instance_name})
             return

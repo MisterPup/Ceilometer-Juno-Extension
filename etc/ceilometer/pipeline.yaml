@@ -34,6 +34,12 @@ sources:
           - "network.outgoing.packets"
       sinks:
           - network_sink
+    - name: allocated_memory_source
+      interval: 600
+      meters:
+          - "memory.allocated"
+      sinks:
+          - allocated_memory_sink
 sinks:
     - name: meter_sink
       transformers:
