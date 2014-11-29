@@ -65,6 +65,11 @@ CPUUtilStats = collections.namedtuple('CPUUtilStats', ['util'])
 #
 MemoryUsageStats = collections.namedtuple('MemoryUsageStats', ['usage'])
 
+# Named tuple representing allocated memory.
+#
+# allocated: Allocated memory
+#
+AllocatedMemoryStats = collections.namedtuple('AllocatedMemoryStats', ['allocated'])
 
 # Named tuple representing vNICs.
 #
@@ -206,6 +211,17 @@ class Inspector(object):
                inspected
         :return: the amount of memory used
         """
+        raise ceilometer.NotImplementedError
+
+    def inspect_allocated_memory(self, instance ,duration=None):
+        """Inspect the allocated memory for an instance.
+
+        :param instance: the target instance
+            :param duration: the last 'n' seconds, over which the value should be
+                   inspected
+            :return: the amount of allocated memory 
+        """
+
         raise ceilometer.NotImplementedError
 
     def inspect_disk_rates(self, instance, duration=None):
