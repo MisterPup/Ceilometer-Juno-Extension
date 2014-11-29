@@ -214,13 +214,14 @@ class Inspector(object):
         raise ceilometer.NotImplementedError
 
     def inspect_allocated_memory(self, instance ,duration=None):
-	"""Inspect the allocated memory for an instance.
+    	"""Inspect the allocated memory for an instance.
 
-	:param instance: the target instance
-        :param duration: the last 'n' seconds, over which the value should be
-               inspected
-        :return: the amount of allocated memory	
-	"""
+    	:param instance: the target instance
+            :param duration: the last 'n' seconds, over which the value should be
+                   inspected
+            :return: the amount of allocated memory	
+    	"""
+        raise ceilometer.NotImplementedError
 
     def inspect_disk_rates(self, instance, duration=None):
         """Inspect the disk statistics as rates for an instance.
