@@ -79,7 +79,7 @@ class PollingTask(object):
 
         # elements of the Cartesian product of sources X pollsters
         # with a common interval
-        self.pollster_matches = set()
+        self.pollster_matches = {}
 
         # per-sink publisher contexts associated with each source
         self.publishers = {}
@@ -95,7 +95,8 @@ class PollingTask(object):
                 self.manager.context)
             self.publishers[pipeline.source.name] = publish_context
         self.publishers[pipeline.source.name].add_pipelines([pipeline])
-        self.pollster_matches.update([(pipeline.source, pollster)])
+        match = self.pollster_matches.setdefault(pipeline.source, set())
+        match.add(pollster)
         key = Resources.key(pipeline.source, pollster)
         self.resources[key].setup(pipeline)
 
@@ -104,30 +105,31 @@ class PollingTask(object):
         agent_resources = self.manager.discover()
         cache = {}
         discovery_cache = {}
-        for source, pollster in self.pollster_matches:
-            LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"),
-                     dict(poll=pollster.name, src=source))
-            pollster_resources = None
-            if pollster.obj.default_discovery:
-                pollster_resources = self.manager.discover(
-                    [pollster.obj.default_discovery], discovery_cache)
-            key = Resources.key(source, pollster)
-            source_resources = list(self.resources[key].get(discovery_cache))
+        for source, pollsters in self.pollster_matches.items():
             with self.publishers[source.name] as publisher:
-                try:
-                    samples = list(pollster.obj.get_samples(
-                        manager=self.manager,
-                        cache=cache,
-                        resources=(source_resources or
-                                   pollster_resources or
-                                   agent_resources)
-                    ))
-                    publisher(samples)
-                except Exception as err:
-                    LOG.warning(_(
-                        'Continue after error from %(name)s: %(error)s')
-                        % ({'name': pollster.name, 'error': err}),
-                        exc_info=True)
+                for pollster in pollsters:
+                    LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"),
+                             dict(poll=pollster.name, src=source))
+                    pollster_resources = None
+                    if pollster.obj.default_discovery:
+                        pollster_resources = self.manager.discover(
+                            [pollster.obj.default_discovery], discovery_cache)
+                    key = Resources.key(source, pollster)
+                    source_resources = list(self.resources[key].get(discovery_cache))
+                    try:
+                        samples = list(pollster.obj.get_samples(
+                            manager=self.manager,
+                            cache=cache,
+                            resources=(source_resources or
+                                       pollster_resources or
+                                       agent_resources)
+                        ))
+                        publisher(samples)
+                    except Exception as err:
+                        LOG.warning(_(
+                            'Continue after error from %(name)s: %(error)s')
+                            % ({'name': pollster.name, 'error': err}),
+                            exc_info=True)
 
 
 class AgentManager(os_service.Service):
