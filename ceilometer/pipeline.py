@@ -328,34 +328,35 @@ class Sink(object):
                                                  'trans': transformer}))
                 LOG.exception(err)
 
-
 class Pipeline(object):
-    """Represents a coupling between a sink and a corresponding source."""
+    """Represents a coupling between a sink and corresponding sources."""
 
-    def __init__(self, source, sink):
-        self.source = source
+    def __init__(self, sources, sink, interval):
+        self.sources = {source.name: source for source in sources}
         self.sink = sink
+        self.interval = self.interval
         self.name = str(self)
 
     def __str__(self):
-        return (self.source.name if self.source.name == self.sink.name
-                else '%s:%s' % (self.source.name, self.sink.name))
+        name = ''
+        for source in self.sources.values():
+          name += source.name + ':'
+        name += self.sink.name
 
+    """We must check that the interval is the same for every source in the pipeline.
+       We can raise an exception in the PipelineManager."""
     def get_interval(self):
-        return self.source.interval
+        return self.interval
 
-    @property
-    def resources(self):
-        return self.source.resources
+    def resources(self, source_name):
+        return self.sources[source_name].resources
 
-    @property
-    def discovery(self):
-        return self.source.discovery
+    def discovery(self, source_name):
+        return self.sources[source_name].discovery
 
     def support_meter(self, meter_name):
-        return self.source.support_meter(meter_name)
+        return any(source.support_meter(meter_name) for source in self.sources.values())
 
-    @property
     def publishers(self):
         return self.sink.publishers
 
@@ -363,12 +364,11 @@ class Pipeline(object):
         self.publish_samples(ctxt, [sample])
 
     def publish_samples(self, ctxt, samples):
-        supported = [s for s in samples if self.source.support_meter(s.name)]
+        supported = [s for s in samples if support_meter(s.name)]
         self.sink.publish_samples(ctxt, supported)
 
     def flush(self, ctxt):
-        self.sink.flush(ctxt)
-
+        self.sink.flush(ctxt)    
 
 class PipelineManager(object):
     """Pipeline Manager
