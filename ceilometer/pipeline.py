@@ -53,25 +53,20 @@ class PipelineException(Exception):
 
 
 class PublishContext(object):
-
-    def __init__(self, context, pipelines=None):
-        pipelines = pipelines or []
-        self.pipelines = set(pipelines)
+    """A publish context associates a pipeline with a context
+    """
+    def __init__(self, context, pipeline):
+        self.pipeline = pipeline
         self.context = context
-
-    def add_pipelines(self, pipelines):
-        self.pipelines.update(pipelines)
 
     def __enter__(self):
         def p(samples):
-            for p in self.pipelines:
-                p.publish_samples(self.context,
-                                  samples)
+            pipeline.publish_samples(self.context,
+                                     samples)
         return p
 
     def __exit__(self, exc_type, exc_value, traceback):
-        for p in self.pipelines:
-            p.flush(self.context)
+        p.flush(self.context)
 
 
 class Source(object):

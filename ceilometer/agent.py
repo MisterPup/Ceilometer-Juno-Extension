@@ -46,9 +46,9 @@ class Resources(object):
         self._resources = []
         self._discovery = []
 
-    def setup(self, pipeline):
-        self._resources = pipeline.resources
-        self._discovery = pipeline.discovery
+    def setup(self, source):
+        self._resources = source.resources
+        self._discovery = source.discovery
 
     def get(self, discovery_cache=None):
         source_discovery = (self.agent_manager.discover(self._discovery,
@@ -70,19 +70,21 @@ class Resources(object):
 
 class PollingTask(object):
     """Polling task for polling samples and inject into pipeline.
-
-    A polling task can be invoked periodically or only once.
+       A polling task can be invoked periodically or only once.
     """
 
     def __init__(self, agent_manager):
         self.manager = agent_manager
 
-        # elements of the Cartesian product of sources X pollsters
-        # with a common interval
+        # a dict of sources (with a common interval)
+        # and associated pollsters
         self.pollster_matches = {}
 
-        # per-sink publisher contexts associated with each source
-        self.publishers = {}
+        # set of publisher contexts (pipeline)
+        self.publishers = []
+
+        # set of all pollsters
+        self.pollsters = []
 
         # we relate the static resources and per-source discovery to
         # each combination of pollster and matching source
@@ -90,47 +92,70 @@ class PollingTask(object):
         self.resources = collections.defaultdict(resource_factory)
 
     def add(self, pollster, pipeline):
-        if pipeline.source.name not in self.publishers:
-            publish_context = publish_pipeline.PublishContext(
-                self.manager.context)
-            self.publishers[pipeline.source.name] = publish_context
-        self.publishers[pipeline.source.name].add_pipelines([pipeline])
-        match = self.pollster_matches.setdefault(pipeline.source, set())
-        match.add(pollster)
-        key = Resources.key(pipeline.source, pollster)
-        self.resources[key].setup(pipeline)
+        #populate pollsters
+        self.pollsters.add(pollster)
+
+        for source in pipeline.sources:
+            #populate pollster_matches
+            match = self.pollster_matches.setdefault(source.name, [])
+            if pollster.name not in [p.name for p in matches]:
+                match.add(pollster)
+
+            #populate resources
+            key = Resources.key(pipeline.source, pollster)
+            self.resources[key].setup(source)
+
+            #populate publishers
+            self.publishers.add(publish_pipeline.PublishContext(
+                self.manager.context, pipeline))
 
     def poll_and_publish(self):
         """Polling sample and publish into pipeline."""
+        #first we poll every pollster
+        pollster_samples = {}
+
         agent_resources = self.manager.discover()
         cache = {}
         discovery_cache = {}
         for source, pollsters in self.pollster_matches.items():
-            with self.publishers[source.name] as publisher:
-                for pollster in pollsters:
-                    LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"),
-                             dict(poll=pollster.name, src=source))
-                    pollster_resources = None
-                    if pollster.obj.default_discovery:
-                        pollster_resources = self.manager.discover(
-                            [pollster.obj.default_discovery], discovery_cache)
-                    key = Resources.key(source, pollster)
-                    source_resources = list(self.resources[key].get(discovery_cache))
-                    try:
-                        samples = list(pollster.obj.get_samples(
-                            manager=self.manager,
-                            cache=cache,
-                            resources=(source_resources or
-                                       pollster_resources or
-                                       agent_resources)
-                        ))
-                        publisher(samples)
-                    except Exception as err:
-                        LOG.warning(_(
-                            'Continue after error from %(name)s: %(error)s')
-                            % ({'name': pollster.name, 'error': err}),
-                            exc_info=True)
+            for pollster in pollsters:
+                LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"), 
+                    dict(poll=pollster.name, src=source))
 
+                pollster_resources = None
+                if pollster.obj.default_discovery:
+                    pollster_resources = self.manager.discover(
+                        [pollster.obj.default_discovery], discovery_cache)
+                key = Resources.key(source, pollster)
+                source_resources = list(self.resources[key].get(discovery_cache))
+
+                try:
+                    samples = list(pollster.obj.get_samples(
+                        manager=self.manager,
+                        cache=cache,
+                        resources=(source_resources or
+                                   pollster_resources or
+                                   agent_resources)
+                    ))
+                    pollster_samples[pollster.name] = samples
+                except Exception as err:
+                    LOG.warning(_(
+                        'Continue after error from %(name)s: %(error)s')
+                        % ({'name': pollster.name, 'error': err}),
+                        exc_info=True)
+
+        #now we publish every sample in each pipeline
+        for index in range(0, len(publishers)):
+            with publishers[index] as publisher:
+                LOG.info(_("Injecting samples into pipeline %(pipeline)s"), 
+                    {'pipeline':publishers[index].pipeline.name})
+
+                #for each pipeline, samples of supported meters are injected
+                #then, at the end of the iterations, the pipeline is flushed
+                for pollster, samples in pollster_samples.items():
+                    LOG.info(_("Injecting samples from pollster %(pollster)s"),
+                        {'pollster':pollster})
+                    publisher(samples)
 
 class AgentManager(os_service.Service):
 
