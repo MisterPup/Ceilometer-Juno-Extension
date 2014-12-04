@@ -334,7 +334,7 @@ class Pipeline(object):
     def __init__(self, sources, sink, interval):
         self.sources = {source.name: source for source in sources}
         self.sink = sink
-        self.interval = self.interval
+        self.interval = interval
         self.name = str(self)
 
     def __str__(self):
@@ -342,6 +342,7 @@ class Pipeline(object):
         for source in self.sources.values():
           name += source.name + ':'
         name += self.sink.name
+        return name
 
     """We must check that the interval is the same for every source in the pipeline.
        We can raise an exception in the PipelineManager."""
@@ -357,6 +358,7 @@ class Pipeline(object):
     def support_meter(self, meter_name):
         return any(source.support_meter(meter_name) for source in self.sources.values())
 
+    @property
     def publishers(self):
         return self.sink.publishers
 
@@ -364,7 +366,7 @@ class Pipeline(object):
         self.publish_samples(ctxt, [sample])
 
     def publish_samples(self, ctxt, samples):
-        supported = [s for s in samples if support_meter(s.name)]
+        supported = [s for s in samples if self.support_meter(s.name)]
         self.sink.publish_samples(ctxt, supported)
 
     def flush(self, ctxt):
@@ -493,7 +495,7 @@ class PipelineManager(object):
 
             for sink in sinks.values():
                 sources_of_sink = ([source for source in sources 
-                                    if sink in source.sinks])
+                                    if sink.name in source.sinks])
                 intervals = [source.interval for source in sources_of_sink]
                 """We must check that every source associated to 
                    the current sink has the same interval
@@ -502,13 +504,13 @@ class PipelineManager(object):
                     if interval != intervals[0]:
                         raise PipelineException(("Cannot couple sink with sources " 
                                                  "with different intervals"), cfg)
-                self.pipelines.append(Pipeline(sources_of_sink, sink))                
+                self.pipelines.append(Pipeline(sources_of_sink, sink, intervals[0]))           
         else:
             LOG.warning(_('detected deprecated pipeline config format'))
             for pipedef in cfg:
                 source = Source(pipedef)
                 sink = Sink(pipedef, transformer_manager)
-                self.pipelines.append(Pipeline(source, sink))
+                self.pipelines.append(Pipeline([source], sink, source.interval))
 
     def publisher(self, context):
         """Build a new Publisher for these manager pipelines.
