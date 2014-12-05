@@ -183,11 +183,18 @@ class AgentManager(os_service.Service):
         groups = set([self.construct_group_id(d.obj.group_id)
                       for d in self.discovery_manager])
         # let each set of statically-defined resources have its own group
+        source_names = [] #to avoid duplication of resources
+        source_resources = [] #set of set of resources. Each set is associated to a source
+        for pipeline in self.pipeline_manager.pipelines:
+            for source in pipeline.sources:
+                #do not add multiple times resources from same source
+                if not source.name in source_names:
+                    source_names.append(source.name)
+                    if(source.resources):
+                        source_resources.append(source.resources)
+
         static_resource_groups = set([
-            self.construct_group_id(utils.hash_of_set(p.resources))
-            for p in self.pipeline_manager.pipelines
-            if p.resources
-        ])
+            self.construct_group_id(utils.hash_of_set(source_resources))])
         groups.update(static_resource_groups)
         for group in groups:
             self.partition_coordinator.join_group(group)

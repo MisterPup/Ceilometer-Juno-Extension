@@ -61,12 +61,12 @@ class PublishContext(object):
 
     def __enter__(self):
         def p(samples):
-            pipeline.publish_samples(self.context,
+            self.pipeline.publish_samples(self.context,
                                      samples)
         return p
 
     def __exit__(self, exc_type, exc_value, traceback):
-        p.flush(self.context)
+        self.pipeline.flush(self.context)
 
 
 class Source(object):
