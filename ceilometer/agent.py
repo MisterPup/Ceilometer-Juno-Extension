@@ -111,7 +111,7 @@ class PollingTask(object):
 
     def poll_and_publish(self):
         """Polling sample and publish into pipeline."""
-        #first we poll every pollster
+        #first we poll every pollster and collect samples
         pollster_samples = {}
 
         agent_resources = self.manager.discover()

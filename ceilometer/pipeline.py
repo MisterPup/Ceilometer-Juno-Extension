@@ -485,36 +485,40 @@ class PipelineManager(object):
             sinks = dict((s['name'], Sink(s, transformer_manager))
                          for s in cfg.get('sinks', []))
 
-            """Sources must be associated to sinks defined in the cfg"""
             for source in sources:
+                #Sources must be associated to sinks defined in the cfg
                 source.check_sinks(sinks)
-
-            for sink in sinks.values():
-                sources_of_sink = ([source for source in sources 
-                                    if sink.name in source.sinks])
-                intervals = [source.interval for source in sources_of_sink]
-                """We must check that every source associated to 
-                   the current sink has the same interval
-                """
-                for interval in intervals:
-                    if interval != intervals[0]:
-                        raise PipelineException(("Cannot couple sink with sources " 
-                                                 "with different intervals"), cfg)
-                self.pipelines.append(Pipeline(sources_of_sink, sink, intervals[0]))           
+                for target in source.sinks:
+                    sink = sinks[target]
+                    #sink already added in a pipeline?
+                    pipeline = next((pipe for pipe in self.pipelines
+                                     if pipe.sink.name == sink.name), None)
+                    if(pipeline == None):
+                        self.pipelines.append(Pipeline([source], 
+                                                        sink,
+                                                        source.interval))
+                    else:
+                        #all sources in pipeline with same interval?
+                        if pipeline.sources[0].interval != source.interval:
+                            raise PipelineException(
+                              ("Cannot associate sink with sources " 
+                               "with different intervals"), cfg)
+                        pipeline.sources.append(source)
         else:
             LOG.warning(_('detected deprecated pipeline config format'))
             for pipedef in cfg:
                 source = Source(pipedef)
                 sink = Sink(pipedef, transformer_manager)
-                self.pipelines.append(Pipeline([source], sink, source.interval))
+                self.pipelines.append(Pipeline([source],
+                                                sink, 
+                                                source.interval))
 
-    def publisher(self, context):
-        """Build a new Publisher for these manager pipelines.
+    def publishers(self, context):
+        """Build a set of Publisher, one for each pipeline.
 
         :param context: The context.
         """
-        return PublishContext(context, self.pipelines)
-
+        return [PublishContext(context, pipeline) for pipeline in self.pipelines]
 
 def setup_pipeline(transformer_manager=None):
     """Setup pipeline manager according to yaml config file."""
