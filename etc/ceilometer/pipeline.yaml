@@ -12,6 +12,7 @@ sources:
           - "cpu"
       sinks:
           - cpu_sink
+          - cpu_memory_sink
     - name: disk_source
       interval: 600
       meters:
@@ -21,6 +22,7 @@ sources:
           - "disk.write.requests"
       sinks:
           - disk_sink
+          - disk_read_write_sink
     - name: network_source
       interval: 600
       meters:
@@ -30,6 +32,12 @@ sources:
           - "network.outgoing.packets"
       sinks:
           - network_sink
+    - name: memory_source
+      interval: 600
+      meters:
+          - "memory"
+      sinks:
+          - cpu_memory_sink
 sinks:
     - name: meter_sink
       transformers:
@@ -76,3 +84,25 @@ sinks:
                     type: "gauge"
       publishers:
           - notifier://
+    - name: disk_read_write_sink
+      transformers:
+          - name: "arithmetic"
+            parameters:
+                target:
+                    name: "disk.read.write.bytes"
+                    unit: "B"
+                    type: "cumulative"
+                    expr: "2*$(disk.read.bytes) + 2*$(disk.write.bytes)"
+      publishers:
+          - rpc://
+    - name: cpu_memory_sink
+      transformers:
+          - name: "arithmetic"
+            parameters:
+                target:
+                    name: "cpu_memory
+                    unit: "%"
+                    type: "cumulative"
+                    expr: "1*$(cpu_util) + 1*$(memory)"
+      publishers:
+          - rpc://
