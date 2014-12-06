@@ -324,34 +324,35 @@ class Sink(object):
                 LOG.exception(err)
 
 class Pipeline(object):
-    """Represents a coupling between a sink and corresponding sources."""
+    """Represents an association between a sink and corresponding sources."""
 
     def __init__(self, sources, sink, interval):
-        self.sources = {source.name: source for source in sources}
+        self.sources = sources
         self.sink = sink
+	#every source in the pipeline must have the same interval
         self.interval = interval
         self.name = str(self)
 
     def __str__(self):
         name = ''
-        for source in self.sources.values():
+        for source in self.sources:
           name += source.name + ':'
         name += self.sink.name
         return name
 
-    """We must check that the interval is the same for every source in the pipeline.
-       We can raise an exception in the PipelineManager."""
     def get_interval(self):
         return self.interval
 
     def resources(self, source_name):
-        return self.sources[source_name].resources
+        return [(source.resources for source in self.sources
+		if source.name == source_name)]
 
     def discovery(self, source_name):
-        return self.sources[source_name].discovery
+        return [(source.discovery for source in self.sources
+		if source.name == source.name)]
 
     def support_meter(self, meter_name):
-        return any(source.support_meter(meter_name) for source in self.sources.values())
+        return any(source.support_meter(meter_name) for source in self.sources)
 
     @property
     def publishers(self):

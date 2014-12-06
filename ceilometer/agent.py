@@ -93,20 +93,20 @@ class PollingTask(object):
 
     def add(self, pollster, pipeline):
         #populate pollsters
-        self.pollsters.add(pollster)
+        self.pollsters.append(pollster)
 
         for source in pipeline.sources:
             #populate pollster_matches
-            match = self.pollster_matches.setdefault(source.name, [])
-            if pollster.name not in [p.name for p in matches]:
-                match.add(pollster)
+            match = self.pollster_matches.setdefault(source, [])
+            if pollster.name not in [p.name for p in match]:
+                match.append(pollster)
 
             #populate resources
-            key = Resources.key(pipeline.source, pollster)
+            key = Resources.key(source, pollster)
             self.resources[key].setup(source)
 
             #populate publishers
-            self.publishers.add(publish_pipeline.PublishContext(
+            self.publishers.append(publish_pipeline.PublishContext(
                 self.manager.context, pipeline))
 
     def poll_and_publish(self):
@@ -120,7 +120,7 @@ class PollingTask(object):
         for source, pollsters in self.pollster_matches.items():
             for pollster in pollsters:
                 LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"), 
-                    dict(poll=pollster.name, src=source))
+                    dict(poll=pollster.name, src=source.name))
 
                 pollster_resources = None
                 if pollster.obj.default_discovery:
@@ -145,10 +145,10 @@ class PollingTask(object):
                         exc_info=True)
 
         #now we publish every sample in each pipeline
-        for index in range(0, len(publishers)):
-            with publishers[index] as publisher:
+        for index in range(0, len(self.publishers)):
+            with self.publishers[index] as publisher:
                 LOG.info(_("Injecting samples into pipeline %(pipeline)s"), 
-                    {'pipeline':publishers[index].pipeline.name})
+                    {'pipeline':self.publishers[index].pipeline.name})
 
                 #for each pipeline, samples of supported meters are injected
                 #then, at the end of the iterations, the pipeline is flushed
