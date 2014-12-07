@@ -76,15 +76,14 @@ class PollingTask(object):
     def __init__(self, agent_manager):
         self.manager = agent_manager
 
-        # a dict of sources (with a common interval)
-        # and associated pollsters
+        # dict of (source, [pollster])
         self.pollster_matches = {}
 
-        # set of publisher contexts (pipeline)
-        self.publishers = []
+        # dict of (pipeline.name, publisher contexts)
+        self.publishers = {}
 
-        # set of all pollsters
-        self.pollsters = []
+        # dict of (name, pollsters)
+        #self.pollsters = {}
 
         # we relate the static resources and per-source discovery to
         # each combination of pollster and matching source
@@ -93,16 +92,19 @@ class PollingTask(object):
 
     def add(self, pollster, pipeline):
         #populate pollsters
-        self.pollsters.append(pollster)
+        #self.pollsters[pollster.name] = pollster
 
         #populate publishers (one for each pipeline)
-        self.publishers.append(publish_pipeline.PublishContext(
-            self.manager.context, pipeline))
+        self.publishers[pipeline.name] = (
+                publish_pipeline.PublishContext(self.manager.context, 
+                                                pipeline))
 
         for source in pipeline.sources:
             #populate pollster_matches
             match = self.pollster_matches.setdefault(source, [])
-            if pollster.name not in [p.name for p in match]:
+            #if source supports meter and pollster not already added
+            if (source.support_meter(pollster.name) and
+                    pollster.name not in [p.name for p in match]):
                 match.append(pollster)
                 #populate resources
                 key = Resources.key(source, pollster)
@@ -118,43 +120,46 @@ class PollingTask(object):
         discovery_cache = {}
         for source, pollsters in self.pollster_matches.items():
             for pollster in pollsters:
-                LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"), 
-                    dict(poll=pollster.name, src=source.name))
+                #some sources share pollsters, do not call them multiple times
+                if not pollster_samples.get(pollster.name):
+                    LOG.info(_("Polling pollster %(poll)s in the context of %(src)s"), 
+                        dict(poll=pollster.name, src=source.name))
 
-                pollster_resources = None
-                if pollster.obj.default_discovery:
-                    pollster_resources = self.manager.discover(
-                        [pollster.obj.default_discovery], discovery_cache)
-                key = Resources.key(source, pollster)
-                source_resources = list(self.resources[key].get(discovery_cache))
+                    pollster_resources = None
+                    if pollster.obj.default_discovery:
+                        pollster_resources = self.manager.discover(
+                            [pollster.obj.default_discovery], discovery_cache)
+                    key = Resources.key(source, pollster)
+                    source_resources = list(self.resources[key].get(discovery_cache))
 
-                try:
-                    samples = list(pollster.obj.get_samples(
-                        manager=self.manager,
-                        cache=cache,
-                        resources=(source_resources or
-                                   pollster_resources or
-                                   agent_resources)
-                    ))
-                    pollster_samples[pollster.name] = samples
-                except Exception as err:
-                    LOG.warning(_(
-                        'Continue after error from %(name)s: %(error)s')
-                        % ({'name': pollster.name, 'error': err}),
-                        exc_info=True)
+                    try:
+                        samples = list(pollster.obj.get_samples(
+                            manager=self.manager,
+                            cache=cache,
+                            resources=(source_resources or
+                                       pollster_resources or
+                                       agent_resources)
+                        ))
+                        pollster_samples[pollster.name] = samples
+                    except Exception as err:
+                        LOG.warning(_(
+                            'Continue after error from %(name)s: %(error)s')
+                            % ({'name': pollster.name, 'error': err}),
+                            exc_info=True)
 
         #now we publish every sample in each pipeline
-        for index in range(0, len(self.publishers)):
-            with self.publishers[index] as publisher:
+        for publisher in self.publishers.values():
+            with publisher as p:
                 LOG.info(_("Injecting samples into pipeline %(pipeline)s"), 
-                    {'pipeline':self.publishers[index].pipeline.name})
+                    {'pipeline':publisher.pipeline.name})
 
                 #for each pipeline, samples of supported meters are injected
                 #then, at the end of the iterations, the pipeline is flushed
                 for pollster, samples in pollster_samples.items():
-                    LOG.info(_("Injecting samples from pollster %(pollster)s"),
-                        {'pollster':pollster})
-                    publisher(samples)
+                    if publisher.pipeline.support_meter(pollster):
+                        LOG.info(_("Injecting samples from pollster %(pollster)s"),
+                            {'pollster':pollster})
+                        p(samples)
 
 class AgentManager(os_service.Service):
 

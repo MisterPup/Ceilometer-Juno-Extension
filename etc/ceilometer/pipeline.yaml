@@ -35,7 +35,7 @@ sources:
     - name: memory_source
       interval: 600
       meters:
-          - "memory"
+          - "memory.allocated"
       sinks:
           - cpu_memory_sink
 sinks:
@@ -103,6 +103,6 @@ sinks:
                     name: "cpu_memory
                     unit: "%"
                     type: "cumulative"
-                    expr: "1*$(cpu_util) + 1*$(memory)"
+                    expr: "1*$(cpu) + 1*$(memory.allocated)"
       publishers:
           - rpc://
