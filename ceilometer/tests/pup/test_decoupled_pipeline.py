@@ -132,12 +132,6 @@ class TestDecoupledPipeline(pipeline_base.BasePipelineTestCase):
             with publisher as p:
                 p([self.test_counter])
 
-        print "TEST"
-        print self.pipeline_cfg
-
-        for pipe in pipeline_manager.pipelines:
-            print pipe.name
-
         self.assertEqual(len(pipeline_manager.pipelines), 2)
         self.assertEqual(str(pipeline_manager.pipelines[0]),
                          'test_source:test_sink')
@@ -163,8 +157,10 @@ class TestDecoupledPipeline(pipeline_base.BasePipelineTestCase):
 
         pipeline_manager = pipeline.PipelineManager(self.pipeline_cfg,
                                                     self.transformer_manager)
-        with pipeline_manager.publisher(None) as p:
-            p([self.test_counter])
+
+        for publisher in pipeline_manager.publishers(None):
+            with publisher as p:
+                p([self.test_counter])
 
         self.test_counter = sample.Sample(
             name='b',
@@ -178,63 +174,21 @@ class TestDecoupledPipeline(pipeline_base.BasePipelineTestCase):
             resource_metadata=self.test_counter.resource_metadata,
         )
 
-        with pipeline_manager.publisher(None) as p:
-            p([self.test_counter])
+        for publisher in pipeline_manager.publishers(None):
+            with publisher as p:
+                p([self.test_counter])
 
-        self.assertEqual(len(pipeline_manager.pipelines), 2)
+        self.assertEqual(len(pipeline_manager.pipelines), 1)
         self.assertEqual(str(pipeline_manager.pipelines[0]),
-                         'test_source:test_sink')
-        self.assertEqual(str(pipeline_manager.pipelines[1]),
-                         'second_source:test_sink')
-        test_publisher = pipeline_manager.pipelines[0].publishers[0]
-        another_publisher = pipeline_manager.pipelines[1].publishers[0]
-        for publisher in [test_publisher, another_publisher]:
-            self.assertEqual(len(publisher.samples), 2)
-            self.assertEqual(publisher.calls, 2)
-            self.assertEqual(getattr(publisher.samples[0], "name"), 'a_update')
-            self.assertEqual(getattr(publisher.samples[1], "name"), 'b_update')
+                         'test_source:second_source:test_sink')
+        publisher = pipeline_manager.pipelines[0].publishers[0]
+
+        self.assertEqual(len(publisher.samples), 2)
+        self.assertEqual(publisher.calls, 2)
+        self.assertEqual(getattr(publisher.samples[0], "name"), 'a_update')
+        self.assertEqual(getattr(publisher.samples[1], "name"), 'b_update')
 
         transformed_samples = self.TransformerClass.samples
         self.assertEqual(len(transformed_samples), 2)
         self.assertEqual([getattr(s, 'name') for s in transformed_samples],
                          ['a', 'b'])
-
-    def _do_test_rate_of_change_in_boilerplate_pipeline_cfg(self, index,
-                                                            meters, units):
-        with open('etc/ceilometer/pipeline.yaml') as fap:
-            data = fap.read()
-        pipeline_cfg = yaml.safe_load(data)
-        for s in pipeline_cfg['sinks']:
-            s['publishers'] = ['test://']
-        pipeline_manager = pipeline.PipelineManager(pipeline_cfg,
-                                                    self.transformer_manager)
-        pipe = pipeline_manager.pipelines[index]
-        self._do_test_rate_of_change_mapping(pipe, meters, units)
-
-    def test_rate_of_change_boilerplate_disk_read_cfg(self):
-        meters = ('disk.read.bytes', 'disk.read.requests')
-        units = ('B', 'request')
-        self._do_test_rate_of_change_in_boilerplate_pipeline_cfg(2,
-                                                                 meters,
-                                                                 units)
-
-    def test_rate_of_change_boilerplate_disk_write_cfg(self):
-        meters = ('disk.write.bytes', 'disk.write.requests')
-        units = ('B', 'request')
-        self._do_test_rate_of_change_in_boilerplate_pipeline_cfg(2,
-                                                                 meters,
-                                                                 units)
-
-    def test_rate_of_change_boilerplate_network_incoming_cfg(self):
-        meters = ('network.incoming.bytes', 'network.incoming.packets')
-        units = ('B', 'packet')
-        self._do_test_rate_of_change_in_boilerplate_pipeline_cfg(3,
-                                                                 meters,
-                                                                 units)
-
-    def test_rate_of_change_boilerplate_network_outgoing_cfg(self):
-        meters = ('network.outgoing.bytes', 'network.outgoing.packets')
-        units = ('B', 'packet')
-        self._do_test_rate_of_change_in_boilerplate_pipeline_cfg(3,
-                                                                 meters,
-                                                                 units)

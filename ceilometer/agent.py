@@ -95,19 +95,18 @@ class PollingTask(object):
         #populate pollsters
         self.pollsters.append(pollster)
 
+        #populate publishers (one for each pipeline)
+        self.publishers.append(publish_pipeline.PublishContext(
+            self.manager.context, pipeline))
+
         for source in pipeline.sources:
             #populate pollster_matches
             match = self.pollster_matches.setdefault(source, [])
             if pollster.name not in [p.name for p in match]:
                 match.append(pollster)
-
-            #populate resources
-            key = Resources.key(source, pollster)
-            self.resources[key].setup(source)
-
-            #populate publishers
-            self.publishers.append(publish_pipeline.PublishContext(
-                self.manager.context, pipeline))
+                #populate resources
+                key = Resources.key(source, pollster)
+                self.resources[key].setup(source)
 
     def poll_and_publish(self):
         """Polling sample and publish into pipeline."""
