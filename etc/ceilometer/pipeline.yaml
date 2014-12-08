@@ -13,6 +13,7 @@ sources:
       sinks:
           - cpu_sink
           - cpu_memory_sink
+          - cpuutil_memory_sink
     - name: disk_source
       interval: 600
       meters:
@@ -99,6 +100,29 @@ sinks:
       transformers:
           - name: "arithmetic"
             parameters:
+                target:
+                    name: "cpu_memory
+                    unit: "%"
+                    type: "cumulative"
+                    expr: "1*$(cpu) + 1*$(memory.allocated)"
+      publishers:
+          - rpc://
+    - name: cpuutil_memory_sink
+      transformers:
+          - name: "rate_of_change"
+            parameters:
+                apply_to:
+                    - "cpu"
+                target:
+                    name: "cpu_util"
+                    unit: "%"
+                    type: "gauge"
+                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"                
+      transformers:
+          - name: "arithmetic"
+            parameters:
+                apply_to:
+                    - "*"
                 target:
                     name: "cpu_memory
                     unit: "%"
