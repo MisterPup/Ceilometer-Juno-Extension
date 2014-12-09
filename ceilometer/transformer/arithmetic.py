@@ -96,6 +96,9 @@ class ArithmeticTransformer(transformer.TransformerBase):
                      {'expr': self.expr, 'exc': str(e)})
 
     def handle_sample(self, context, _sample):
+        if not must_apply(sample):
+            return sample
+        
         self._update_cache(_sample)
         self.latest_timestamp = _sample.timestamp
 

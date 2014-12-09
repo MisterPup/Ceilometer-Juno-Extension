@@ -91,6 +91,9 @@ class ScalingTransformer(transformer.TransformerBase):
 
     def handle_sample(self, context, s):
         """Handle a sample, converting if necessary."""
+        if not must_apply(sample):
+            return sample
+
         LOG.debug(_('handling sample %s'), (s,))
         if self.source.get('unit', s.unit) == s.unit:
             s = self._convert(s)
@@ -113,6 +116,9 @@ class RateOfChangeTransformer(ScalingTransformer):
 
     def handle_sample(self, context, s):
         """Handle a sample, converting if necessary."""
+        if not must_apply(sample):
+            return sample
+
         LOG.debug(_('handling sample %s'), (s,))
         key = s.name + s.resource_id
         prev = self.cache.get(key)
@@ -203,6 +209,9 @@ class AggregatorTransformer(ScalingTransformer):
         return "%s-%s-%s" % (s.name, s.resource_id, non_aggregated_keys)
 
     def handle_sample(self, context, sample_):
+        if not must_apply(sample):
+            return sample
+        
         if not self.initial_timestamp:
             self.initial_timestamp = timeutils.parse_isotime(sample_.timestamp)
 

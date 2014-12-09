@@ -52,10 +52,14 @@ class TransformerBase(object):
         :param kwargs: The parameters that are defined in pipeline config file.
         """
         super(TransformerBase, self).__init__()
+        #raise exception if something's wrong with defined meters
+        self.apply_to = kwargs.get('apply_to')
 
     @abc.abstractmethod
     def handle_sample(self, context, sample):
-        """Transform a sample.
+        """Transform a sample if the transformer must be applied to.
+
+        The sample must be returned untransformed if its meter is not in apply_to.
 
         :param context: Passed from the data collector.
         :param sample: A sample.
@@ -67,6 +71,17 @@ class TransformerBase(object):
         :param context: Passed from the data collector.
         """
         return []
+
+    def must_apply(self, sample):
+        """Check if the sample must be tranformed.
+
+        If the meter of the sample is not in apply_to,
+        then the sample must not be transformed
+
+        :sample: the sample to check.
+        """
+
+        return "*" in apply_to or sample.name in apply_to
 
 
 class Namespace(object):
