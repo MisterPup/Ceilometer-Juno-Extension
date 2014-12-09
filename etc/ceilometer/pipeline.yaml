@@ -107,7 +107,7 @@ sinks:
                     expr: "1*$(cpu) + 1*$(memory.allocated)"
       publishers:
           - rpc://
-    - name: cpuutil_memory_sink
+    - name: cpuutil_memory_sink              
       transformers:
           - name: "rate_of_change"
             parameters:
@@ -117,14 +117,13 @@ sinks:
                     name: "cpu_util"
                     unit: "%"
                     type: "gauge"
-                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"                
-      transformers:
+                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
           - name: "arithmetic"
             parameters:
                 apply_to:
                     - "*"
                 target:
-                    name: "cpu_memory
+                    name: "cpuutil_memory
                     unit: "%"
                     type: "cumulative"
                     expr: "1*$(cpu) + 1*$(memory.allocated)"
