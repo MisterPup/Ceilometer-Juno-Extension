@@ -31,7 +31,7 @@ class TransformerAccumulator(transformer.TransformerBase):
         super(TransformerAccumulator, self).__init__(**kwargs)
 
     def handle_sample(self, context, sample):
-        if not must_apply(sample):
+        if not self.must_apply(sample):
             return sample
 
         if self.size >= 1:

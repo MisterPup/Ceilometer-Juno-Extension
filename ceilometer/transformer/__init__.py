@@ -53,7 +53,7 @@ class TransformerBase(object):
         """
         super(TransformerBase, self).__init__()
         #raise exception if something's wrong with defined meters
-        self.apply_to = kwargs.get('apply_to')
+        self.apply_to = kwargs.get('apply_to') or ['*']
 
     @abc.abstractmethod
     def handle_sample(self, context, sample):
@@ -81,7 +81,7 @@ class TransformerBase(object):
         :sample: the sample to check.
         """
 
-        return "*" in apply_to or sample.name in apply_to
+        return "*" in self.apply_to or sample.name in self.apply_to
 
 
 class Namespace(object):
