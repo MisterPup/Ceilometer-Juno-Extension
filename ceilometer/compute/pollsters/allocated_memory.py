@@ -13,12 +13,11 @@ LOG = log.getLogger(__name__)
 class AllocatedMemoryPollster(plugin.ComputePollster):
 
     def get_samples(self, manager, cache, resources):
-        self._inspection_duration = self._record_poll_time()
         for instance in resources:
             LOG.debug(_('Checking allocated memory for instance %s'), instance.id)
             try:
                 memory_info = manager.inspector.inspect_allocated_memory(
-                    instance, self._inspection_duration)
+                    instance)
                 LOG.debug(_("ALLOCATED MEMORY: %(instance)s %(allocated)f"),
                           ({'instance': instance.__dict__,
                             'allocated': memory_info.allocated}))

@@ -181,7 +181,7 @@ class LibvirtInspector(virt_inspector.Inspector):
                                              errors=block_stats[4])
             yield (disk, stats)
 
-    def inspect_allocated_memory(self, instance ,duration=None):
+    def inspect_allocated_memory(self, instance):
         instance_name = util.instance_name(instance)
         domain = self._lookup_by_name(instance_name)
         state = domain.info()[0]
@@ -209,3 +209,25 @@ class LibvirtInspector(virt_inspector.Inspector):
              LOG.warn(_('Failed to inspect allocated memory of %(instance_name)s, '
                        'can not get info from libvirt: %(error)s'),
                      {'instance_name': instance_name, 'error': e})
+
+    def inspect_host_memory_usage(self, host_resource_id):
+        conn = self._get_connection()
+        hostname = host_resource_id.split('_')[0]
+
+        try:
+            mem_param = conn.getMemoryStats(-1) #get memory info for host
+            if(mem_param and mem_param.get('total') and mem_param.get('free')):
+                mem_total = mem_param['total']
+                mem_free = mem_param['free']
+                mem_usage = (mem_total - mem_free)/(mem_total)*100
+
+                return virt_inspector.HostMemoryUsage(usage=mem_usage)
+            else:
+                LOG.warn(_('Failed to inspect memory usage of %(hostname)s, '
+                           'can not get info from libvirt'),
+                        {'hostname': hostname})             
+
+        except libvirt.libvirtError as e:
+             LOG.warn(_('Failed to inspect memory usage of %(hostname)s, '
+                       'can not get info from libvirt: %(error)s'),
+                     {'hostname': hostname, 'error': e})

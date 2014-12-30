@@ -136,6 +136,10 @@ DiskRateStats = collections.namedtuple('DiskRateStats',
                                         'write_bytes_rate',
                                         'write_requests_rate'])
 
+# Named tuple representing Host CPU Utilization statistics.
+HostMemoryUsage = collections.namedtuple('HostMemoryUsage', 
+                                         ['usage'])
+
 
 # Exception types
 #
@@ -213,13 +217,13 @@ class Inspector(object):
         """
         raise ceilometer.NotImplementedError
 
-    def inspect_allocated_memory(self, instance ,duration=None):
+    def inspect_allocated_memory(self, instance):
         """Inspect the allocated memory for an instance.
 
         :param instance: the target instance
-            :param duration: the last 'n' seconds, over which the value should be
+        :param duration: the last 'n' seconds, over which the value should be
                    inspected
-            :return: the amount of allocated memory 
+        :return: the amount of allocated memory 
         """
 
         raise ceilometer.NotImplementedError
@@ -235,6 +239,13 @@ class Inspector(object):
         """
         raise ceilometer.NotImplementedError
 
+    def inspect_host_memory_usage(self, host_resource_id):
+        """Inspect memory usage of current compute host.
+
+        :param host_resource_id: the resource_id of the host
+        :return: the memory usage of the host
+        """
+        raise ceilometer.NotImplementedError
 
 def get_hypervisor_inspector():
     try:

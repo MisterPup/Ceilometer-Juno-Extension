@@ -46,3 +46,31 @@ class InstanceDiscovery(plugin.DiscoveryBase):
             return cfg.CONF.host
         else:
             return None
+
+
+class HostResourceIdDiscovery(plugin.DiscoveryBase):
+    """Discovery that supplies host resource id.
+
+    This discovery is partitioned in groups, 
+    each group related to a compute host.
+    """
+
+    def __init__(self):
+        super(HostResourceIdDiscovery, self).__init__()
+
+    def discover(self, manager, param=None):
+        """Discover resources to monitor."""
+
+        hostname = cfg.CONF.host
+        #actually hostname_nodename
+        resource_id = "_".join([hostname, hostname])
+
+        return [resource_id]
+
+    @property
+    def group_id(self):
+        if cfg.CONF.compute.workload_partitioning:
+            return cfg.CONF.host
+        else:
+            return None
+
