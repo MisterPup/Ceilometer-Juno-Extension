@@ -1,4 +1,5 @@
 
+from oslo.utils import timeutils
 import ceilometer
 from ceilometer.compute import plugin
 from ceilometer.compute.pollsters import util
@@ -21,12 +22,16 @@ class HostMemoryUsage(plugin.ComputePollster):
                 LOG.debug(_("HOST MEMORY USAGE: %(hostname)s %(usage)f"),
                           ({'hostname': hostname,
                             'usage': memory_info.usage}))
-                yield util.make_sample_from_instance(
-                    host_res_id,
+                yield sample.Sample(
                     name='host.memory.usage',
                     type=sample.TYPE_GAUGE,
                     unit='%',
                     volume=memory_info.usage,
+                    user_id=None,
+                    project_id=None,
+                    resource_id=host_res_id,
+                    timestamp=timeutils.isotime(),
+                    resource_metadata=None
                 )
             except ceilometer.NotImplementedError:
                 # Selected inspector does not implement this pollster.

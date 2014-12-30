@@ -217,9 +217,9 @@ class LibvirtInspector(virt_inspector.Inspector):
         try:
             mem_param = conn.getMemoryStats(-1) #get memory info for host
             if(mem_param and mem_param.get('total') and mem_param.get('free')):
-                mem_total = mem_param['total']
-                mem_free = mem_param['free']
-                mem_usage = (mem_total - mem_free)/(mem_total)*100
+                mem_total = float(mem_param['total'])
+                mem_free = float(mem_param['free'])
+                mem_usage = ((mem_total - mem_free)/(mem_total))*100
 
                 return virt_inspector.HostMemoryUsage(usage=mem_usage)
             else:
