@@ -40,3 +40,7 @@ class HostCPUPollster(plugin.ComputePollster):
             except Exception as err:
                 LOG.exception(_('could not get Host CPU time for %(hostname)s: %(e)s'),
                               {'hostname': hostname, 'e': err})
+
+    @property
+    def default_discovery(self):
+        return 'host_resource_id'

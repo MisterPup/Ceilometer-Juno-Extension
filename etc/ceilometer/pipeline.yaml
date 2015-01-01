@@ -148,7 +148,7 @@ sinks:
           - name: "rate_of_change"
             parameters:
                 target:
-                    name: "host_cpu_util"
+                    name: "host.cpu_util"
                     unit: "%"
                     type: "gauge"
                     scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"
@@ -171,7 +171,7 @@ sinks:
                     - "*"
                 target:
                     name: "host.cpu_util.memory.usage"
-                    unit: "%"
+                    unit: ""
                     type: "cumulative"
                     expr: "1*$(host.cpu_util)/100 + 1*$(host.memory.usage)/100"
       publishers:
