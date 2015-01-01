@@ -23,7 +23,7 @@ class HostCPUPollster(plugin.ComputePollster):
                            'time': cpu_info.time})
                 cpu_num = {'cpu_number': cpu_info.number}
                 yield sample.Sample(
-                    name='host.cpu',
+                    name='host.cpu.time',
                     type=sample.TYPE_CUMULATIVE,
                     unit='ns',
                     volume=cpu_info.time,

@@ -43,9 +43,9 @@ sources:
     - name: host_cpu_source
       interval: 600
       meters:
-          - "host.cpu"
+          - "host.cpu.time"
       sinks:
-          - host_cpu_sink
+          - host_cpu_time_sink
           - host_cpu_util_memory_usage_sink
     - name: host_memory_source
       interval: 600
@@ -143,12 +143,12 @@ sinks:
                     expr: "1*$(cpu_util) + 1*$(memory.allocated)"
       publishers:
           - rpc://
-    - name: host_cpu_sink
+    - name: host_cpu_time_sink
       transformers:
           - name: "rate_of_change"
             parameters:
                 target:
-                    name: "host.cpu_util"
+                    name: "host.cpu.util"
                     unit: "%"
                     type: "gauge"
                     scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"
@@ -159,9 +159,9 @@ sinks:
           - name: "rate_of_change"
             parameters:
                 apply_to:
-                    - "host.cpu"
+                    - "host.cpu.time"
                 target:
-                    name: "host.cpu_util"
+                    name: "host.cpu.util"
                     unit: "%"
                     type: "gauge"
                     scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
@@ -170,9 +170,9 @@ sinks:
                 apply_to:
                     - "*"
                 target:
-                    name: "host.cpu_util.memory.usage"
+                    name: "host.cpu.util.memory.usage"
                     unit: ""
                     type: "cumulative"
-                    expr: "1*$(host.cpu_util)/100 + 1*$(host.memory.usage)/100"
+                    expr: "1*$(host.cpu.util)/100 + 1*$(host.memory.usage)/100"
       publishers:
           - rpc://
