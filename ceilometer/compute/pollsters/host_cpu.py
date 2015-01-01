@@ -10,38 +10,33 @@ from ceilometer import sample
 
 LOG = log.getLogger(__name__)
 
-
-class HostMemoryUsagePollster(plugin.ComputePollster):
+class HostCPUPollster(plugin.ComputePollster):
 
     def get_samples(self, manager, cache, resources):
         for host_res_id in resources: #only one host
             hostname = host_res_id.split('_')[0]
-            LOG.debug(_('Checking memory usage for host %s'), host_res_id)
+            LOG.debug(_('Checking CPU statistics for host %s'), host_res_id)
             try:
-                memory_info = manager.inspector.inspect_host_memory_usage(host_res_id)
-                LOG.debug(_("HOST MEMORY USAGE: %(hostname)s %(usage)f"),
-                          ({'hostname': hostname,
-                            'usage': memory_info.usage}))
+                cpu_info = manager.inspector.inspect_host_cpu_time(host_res_id)
+                LOG.debug(_("HOST CPUTIME USAGE: %(hostname)s %(time)d"),
+                          {'hostname': hostname,
+                           'time': cpu_info.time})
+                cpu_num = {'cpu_number': cpu_info.number}
                 yield sample.Sample(
-                    name='host.memory.usage',
-                    type=sample.TYPE_GAUGE,
-                    unit='%',
-                    volume=memory_info.usage,
+                    name='host.cpu',
+                    type=sample.TYPE_CUMULATIVE,
+                    unit='ns',
+                    volume=cpu_info.time,
                     user_id=None,
                     project_id=None,
                     resource_id=host_res_id,
                     timestamp=timeutils.isotime(),
-                    resource_metadata=None
+                    resource_metadata=cpu_num
                 )
             except ceilometer.NotImplementedError:
                 # Selected inspector does not implement this pollster.
-                LOG.debug(_('Obtaining Host Memory Usage is not implemented for %s'
+                LOG.debug(_('Obtaining Host CPU time is not implemented for %s'
                             ), manager.inspector.__class__.__name__)
             except Exception as err:
-                LOG.exception(_('Could not get Host Memory Usage for '
-                                '%(hostname)s: %(e)s'), 
-                               {'hostname': hostname, 'e': err})
-
-    @property
-    def default_discovery(self):
-        return 'host_resource_id'
+                LOG.exception(_('could not get Host CPU time for %(hostname)s: %(e)s'),
+                              {'hostname': hostname, 'e': err})

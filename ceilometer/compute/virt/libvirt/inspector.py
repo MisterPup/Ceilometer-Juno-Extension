@@ -231,3 +231,21 @@ class LibvirtInspector(virt_inspector.Inspector):
              LOG.warn(_('Failed to inspect memory usage of %(hostname)s, '
                        'can not get info from libvirt: %(error)s'),
                      {'hostname': hostname, 'error': e})
+
+    def inspect_host_cpu_time(self, host_resource_id):
+        conn = self._get_connection()
+        try:
+            cpuStats = conn.getCPUStats(-1) #get total cpu stats for host
+            cpuMap = conn.getCPUMap()
+
+            userTime = cpuStats['user']
+            kernelTime = cpuStats['kernel']
+            busyTime = userTime + kernelTime
+            cpuNum = cpuMap[0]
+
+            return virt_inspector.HostCPUStats(number=cpuNum, time=busyTime)
+        except libvirt.libvirtError as e:
+             LOG.warn(_('Failed to inspect host cpu time of %(hostname)s, '
+                       'can not get info from libvirt: %(error)s'),
+                     {'hostname': hostname, 'error': e})
+

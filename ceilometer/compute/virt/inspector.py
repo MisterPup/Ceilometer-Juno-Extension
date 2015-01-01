@@ -136,9 +136,19 @@ DiskRateStats = collections.namedtuple('DiskRateStats',
                                         'write_bytes_rate',
                                         'write_requests_rate'])
 
-# Named tuple representing Host CPU Utilization statistics.
+# Named tuple representing Host Memory Utilization statistics.
+#
+# usage: Amount of memory used
+#
 HostMemoryUsage = collections.namedtuple('HostMemoryUsage', 
                                          ['usage'])
+
+# Named tuple representing Host Cpu
+#
+# number: number of CPUs
+# time: cumulative CPU time#
+HostCPUStats = collections.namedtuple('HostCPUStats', 
+                                     ['number', 'time'])
 
 
 # Exception types
@@ -245,6 +255,14 @@ class Inspector(object):
         :param host_resource_id: the resource_id of the host
         :return: the memory usage of the host
         """
+        raise ceilometer.NotImplementedError
+
+    def inspect_host_cpu_time(self, host_resource_id):
+        """Inspect the CPU statistics for an instance.
+
+        :param host_resource_id: the resource_id of the host
+        :return: the number of CPUs and cumulative CPU time
+        """        
         raise ceilometer.NotImplementedError
 
 def get_hypervisor_inspector():
