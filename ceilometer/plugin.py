@@ -120,9 +120,10 @@ class NotificationBase(PluginBase):
                                        self.event_types):
             return
 
-        with self.pipeline_manager.publisher(context) as p:
-            p(list(self.process_notification(notification)))
-
+        samples = list(self.process_notification(notification))
+        for publish_context in self.pipeline_manager.publishers(context):
+            with publish_context as p:
+                p(samples)
 
 @six.add_metaclass(abc.ABCMeta)
 class PollsterBase(PluginBase):
