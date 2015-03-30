@@ -2,10 +2,10 @@
 Ceilometer-Juno-Extension
 ==========================================
 
-This work is an extension to the monitoring project of OpenStack, Ceilometer.
-It has been realized in the context of the Master's Thesis:
-"*A unified framework for resources monitoring and virtual machines migration in OpenStack*"
-https://github.com/MisterPup/OpenStack-Neat-Ceilometer
+| This work is an extension to the monitoring project of OpenStack, Ceilometer.
+| It has been realized in the context of the Master's Thesis:
+| "*A unified framework for resources monitoring and virtual machines migration in OpenStack*"
+| https://github.com/MisterPup/OpenStack-Neat-Ceilometer
 
 The following changes have been added to Ceilometer:
 
