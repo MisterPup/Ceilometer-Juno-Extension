@@ -6,7 +6,7 @@ Ceilometer-Juno-Extension
 | It has been realized in the context of the Master's Thesis:
 | "*A unified framework for resources monitoring and virtual machines migration in OpenStack*"
 | https://github.com/MisterPup/OpenStack-Neat-Ceilometer
-
+|
 The following changes have been added to Ceilometer:
 
 * A Pipeline was previously defined as the coupling between a source and a sink.
