@@ -36,27 +36,28 @@ The following changes have been added to Ceilometer:
 Selective Transformer
 ==========================================
 
-Here we propose an example of pipeline that produces in output a combination of *host.cpu.time* and *host.memory.usage*
+Here we show an example of pipeline that produces in output a combination of *host.cpu.time* and *host.memory.usage*::
 
-|    - name: host_cpu_util_memory_usage_sink    
-|      transformers:
-|          - name: "rate_of_change"
-|            parameters:
-|                apply_to:
-|                    - "host.cpu.time"
-|                target:
-|                    name: "host.cpu.util"
-|                    unit: "%" 
-|                    type: "gauge"
-|                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
-|          - name: "arithmetic"
-|            parameters:
-|                apply_to:
-|                    - "*"
-|                target:
-|                    name: "host.cpu.util.memory.usage"
-|                    unit: ""
-|                    type: "cumulative"
-|                    expr: "0.5*$(host.cpu.util)/100 + 0.5*$(host.memory.usage)/100"
-|      publishers:
-|          - rpc://
+    - name: host_cpu_util_memory_usage_sink    
+      transformers:
+          - name: "rate_of_change"
+            parameters:
+                apply_to:
+                    - "host.cpu.time"
+                target:
+                    name: "host.cpu.util"
+                    unit: "%" 
+                    type: "gauge"
+                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
+          - name: "arithmetic"
+            parameters:
+                apply_to:
+                    - "*"
+                target:
+                    name: "host.cpu.util.memory.usage"
+                    unit: ""
+                    type: "cumulative"
+                    expr: "0.5*$(host.cpu.util)/100 + 0.5*$(host.memory.usage)/100"
+      publishers:
+          - rpc:///
+
