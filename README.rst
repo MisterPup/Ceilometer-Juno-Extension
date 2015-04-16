@@ -9,8 +9,8 @@ Ceilometer-Juno-Extension
 |
 The following changes have been added to Ceilometer:
 
-* A Pipeline was previously defined as the coupling between a source and a sink.
-  We have redifined it as the association between **one or more** sources and a sink.
+* A Pipeline was previously defined as the *coupling between a source and a sink*.
+  We have redifined it as the *association between **one or more** sources and a sink*.
   In this way, by mean of the multi meter arithmetic transformer we can combine
   samples of meters from heterogeneous sources (e.g., CPU and RAM).
   
