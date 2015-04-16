@@ -38,26 +38,49 @@ Selective Transformer
 
 Here we show an example of pipeline that produces in output a combination of *host.cpu.time* and *host.memory.usage*::
 
-    - name: host_cpu_util_memory_usage_sink    
-      transformers:
-          - name: "rate_of_change"
-            parameters:
-                apply_to:
-                    - "host.cpu.time"
-                target:
-                    name: "host.cpu.util"
-                    unit: "%" 
-                    type: "gauge"
-                    scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
-          - name: "arithmetic"
-            parameters:
-                apply_to:
-                    - "*"
-                target:
-                    name: "host.cpu.util.memory.usage"
-                    unit: ""
-                    type: "cumulative"
-                    expr: "0.5*$(host.cpu.util)/100 + 0.5*$(host.memory.usage)/100"
-      publishers:
-          - rpc:///
+  sources:
+      - name: meter_source
+        interval: 600
+        meters:
+            - "*"
+        sinks:
+            - meter_sink
+      - name: host_cpu_source
+        interval: 600
+        meters:
+            - "host.cpu.time"
+        sinks:
+            - host_cpu_util_memory_usage_sink
+      - name: host_memory_source
+        interval: 600
+        meters:
+            - "host.memory.usage"
+        sinks:
+            - host_cpu_util_memory_usage_sink
+  sinks:
+      - name: host_cpu_util_memory_usage_sink    
+        transformers:
+            - name: "rate_of_change"
+              parameters:
+                  apply_to:
+                      - "host.cpu.time"
+                  target:
+                      name: "host.cpu.util"
+                      unit: "%" 
+                      type: "gauge"
+                      scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"  
+            - name: "arithmetic"
+              parameters:
+                  apply_to:
+                      - "*"
+                  target:
+                      name: "host.cpu.util.memory.usage"
+                      unit: ""
+                      type: "cumulative"
+                      expr: "0.5*$(host.cpu.util)/100 + 0.5*$(host.memory.usage)/100"
+        publishers:
+            - rpc:///
 
+The rate of change transformer is applied only to samples of *host.cpu.time*, in order to get *host.cpu.util*.
+Than the multi meter arithmetic transformer is applied to samples of *host.cpu.util* and *host.cpu.util.memory.usage*
+and produces in output samples of *host.cpu.util.memory.usage*
