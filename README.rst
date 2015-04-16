@@ -32,9 +32,9 @@ The following changes have been added to Ceilometer:
 
 * Tests have been made with libvirt and KVM.
 
-==========================================
+------------------------------------------
 Selective Transformer
-==========================================
+------------------------------------------
 
 Here we show an example of pipeline that produces in output a combination of *host.cpu.time* and *host.memory.usage*::
 
